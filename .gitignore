@@ -1,0 +1,12 @@
+node_modules/
+.env
+*.db
+*.sqlite
+.firebase/
+public_firebase/
+app.zip
+appz.zip
+index.zip
+dist/
+dist-ssr/
+*.local
