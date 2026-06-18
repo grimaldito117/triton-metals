@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import logo from './logo.png';
 
+const API_BASE_URL = 'https://triton-metals.onrender.com';
+
 function App() {
   const [token, setToken] = useState(localStorage.getItem('token') || '');
   const [usuario, setUsuario] = useState(JSON.parse(localStorage.getItem('usuario') || 'null'));
@@ -67,7 +69,7 @@ function App() {
 
   const cargarMateriales = async () => {
     try {
-      const res = await fetch('/api/materiales', {
+      const res = await fetch(`${API_BASE_URL}/api/materiales`, {
         headers: { 'Authorization': `Bearer ${token}` }
       });
       if (res.ok) {
@@ -83,7 +85,7 @@ function App() {
 
   const cargarBalance = async () => {
     try {
-      const res = await fetch('/api/balance', {
+      const res = await fetch(`${API_BASE_URL}/api/balance`, {
         headers: { 'Authorization': `Bearer ${token}` }
       });
       if (res.ok) {
@@ -99,7 +101,7 @@ function App() {
     e.preventDefault();
     setLoginError('');
     try {
-      const res = await fetch('/api/auth/login', {
+      const res = await fetch(`${API_BASE_URL}/api/auth/login`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ username, password })
@@ -147,7 +149,7 @@ function App() {
     }
 
     try {
-      const res = await fetch('/api/transacciones', {
+      const res = await fetch(`${API_BASE_URL}/api/transacciones`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -191,7 +193,7 @@ function App() {
     setEditError('');
     setEditExito('');
     try {
-      const res = await fetch(`/api/materiales/${editMaterial.id}`, {
+      const res = await fetch(`${API_BASE_URL}/api/materiales/${editMaterial.id}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
