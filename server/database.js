@@ -59,106 +59,113 @@ const db = {
       }
       
       const context = {
-        changes: res.rowCount,
-        lastID: isInsert && res.rows.length > 0 ? res.rows[0].id : null
+        changes: res ? res.rowCount : 0,
+        lastID: isInsert && res && res.rows.length > 0 ? res.rows[0].id : null
       };
       
       if (callback) {
         callback.call(context, null);
       }
     });
+  },
+
+  // Helper asíncrono para inicialización secuencial ordenada
+  runAsync(sql, params) {
+    return new Promise((resolve, reject) => {
+      this.run(sql, params, (err) => {
+        if (err) reject(err);
+        else resolve();
+      });
+    });
   }
 };
 
-// Inicialización de las tablas de base de datos en Postgres
-pool.query(`
-  CREATE TABLE IF NOT EXISTS usuarios (
-    id SERIAL PRIMARY KEY,
-    username VARCHAR(100) UNIQUE NOT NULL,
-    password_hash VARCHAR(255) NOT NULL,
-    rol VARCHAR(20) NOT NULL CHECK(rol IN ('gerente', 'empleado'))
-  )
-`, (err) => {
-  if (err) {
-    console.error('Error creando tabla usuarios:', err.message);
-  } else {
-    // Insertar usuarios iniciales por defecto
+// Inicialización asíncrona ordenada secuencial para evitar condiciones de carrera (Race Conditions)
+async function inicializarBaseDeDatos() {
+  try {
+    console.log('Iniciando la creación de tablas en orden...');
+    
+    // 1. Crear tabla de usuarios
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS usuarios (
+        id SERIAL PRIMARY KEY,
+        username VARCHAR(100) UNIQUE NOT NULL,
+        password_hash VARCHAR(255) NOT NULL,
+        rol VARCHAR(20) NOT NULL CHECK(rol IN ('gerente', 'empleado'))
+      )
+    `);
+    
+    // Insertar usuarios por defecto si no existen
     const salt = bcrypt.genSaltSync(10);
     const adminHash = bcrypt.hashSync('admin123', salt);
     const empleadoHash = bcrypt.hashSync('empleado123', salt);
+    await db.runAsync(`INSERT INTO usuarios (username, password_hash, rol) VALUES (?, ?, ?)`, ['gerente', adminHash, 'gerente']);
+    await db.runAsync(`INSERT INTO usuarios (username, password_hash, rol) VALUES (?, ?, ?)`, ['empleado', empleadoHash, 'empleado']);
+    
+    // 2. Crear tabla de materiales
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS materiales (
+        id SERIAL PRIMARY KEY,
+        nombre VARCHAR(100) UNIQUE NOT NULL,
+        precio_compra_por_kg REAL NOT NULL DEFAULT 0.0,
+        precio_venta_por_kg REAL NOT NULL DEFAULT 0.0
+      )
+    `);
 
-    db.run(
-      `INSERT INTO usuarios (username, password_hash, rol) VALUES (?, ?, ?)`,
-      ['gerente', adminHash, 'gerente']
-    );
-    db.run(
-      `INSERT INTO usuarios (username, password_hash, rol) VALUES (?, ?, ?)`,
-      ['empleado', empleadoHash, 'empleado']
-    );
-  }
-});
+    // Insertar materiales por defecto si la tabla está vacía
+    const resCount = await pool.query('SELECT COUNT(*) as count FROM materiales');
+    if (parseInt(resCount.rows[0].count) === 0) {
+      const materialesDefecto = [
+        { nombre: 'Chatarra liviana', compra: 0.15, venta: 0.25 },
+        { nombre: 'Chatarra pesada', compra: 0.20, venta: 0.30 },
+        { nombre: 'Chatarra mixto', compra: 0.18, venta: 0.28 },
+        { nombre: 'Cobre', compra: 6.50, venta: 7.50 },
+        { nombre: 'Bronce', compra: 4.00, venta: 4.80 },
+        { nombre: 'Radiador de cobre o bronce', compra: 3.50, venta: 4.20 },
+        { nombre: 'Radiador de Aluminio', compra: 1.50, venta: 2.00 },
+        { nombre: 'Aluminio duro', compra: 1.20, venta: 1.60 },
+        { nombre: 'Aluminio latas de cervezas', compra: 0.90, venta: 1.30 },
+        { nombre: 'Aluminio perfiles', compra: 1.30, venta: 1.70 },
+        { nombre: 'Aluminio ollas', compra: 1.10, venta: 1.50 },
+        { nombre: 'Cable de aluminio', compra: 0.80, venta: 1.10 },
+        { nombre: 'Baterías', compra: 0.50, venta: 0.70 },
+        { nombre: 'Care', compra: 0.30, venta: 0.45 },
+        { nombre: 'Soplo', compra: 0.25, venta: 0.40 },
+        { nombre: 'Pet', compra: 0.20, venta: 0.35 }
+      ];
 
-pool.query(`
-  CREATE TABLE IF NOT EXISTS materiales (
-    id SERIAL PRIMARY KEY,
-    nombre VARCHAR(100) UNIQUE NOT NULL,
-    precio_compra_por_kg REAL NOT NULL DEFAULT 0.0,
-    precio_venta_por_kg REAL NOT NULL DEFAULT 0.0
-  )
-`, (err) => {
-  if (err) {
-    console.error('Error creando tabla materiales:', err.message);
-  } else {
-    db.get('SELECT COUNT(*) as count FROM materiales', [], (err, row) => {
-      if (!err && parseInt(row.count) === 0) {
-        const materialesDefecto = [
-          { nombre: 'Chatarra liviana', compra: 0.15, venta: 0.25 },
-          { nombre: 'Chatarra pesada', compra: 0.20, venta: 0.30 },
-          { nombre: 'Chatarra mixto', compra: 0.18, venta: 0.28 },
-          { nombre: 'Cobre', compra: 6.50, venta: 7.50 },
-          { nombre: 'Bronce', compra: 4.00, venta: 4.80 },
-          { nombre: 'Radiador de cobre o bronce', compra: 3.50, venta: 4.20 },
-          { nombre: 'Radiador de Aluminio', compra: 1.50, venta: 2.00 },
-          { nombre: 'Aluminio duro', compra: 1.20, venta: 1.60 },
-          { nombre: 'Aluminio latas de cervezas', compra: 0.90, venta: 1.30 },
-          { nombre: 'Aluminio perfiles', compra: 1.30, venta: 1.70 },
-          { nombre: 'Aluminio ollas', compra: 1.10, venta: 1.50 },
-          { nombre: 'Cable de aluminio', compra: 0.80, venta: 1.10 },
-          { nombre: 'Baterías', compra: 0.50, venta: 0.70 },
-          { nombre: 'Care', compra: 0.30, venta: 0.45 },
-          { nombre: 'Soplo', compra: 0.25, venta: 0.40 },
-          { nombre: 'Pet', compra: 0.20, venta: 0.35 }
-        ];
-
-        materialesDefecto.forEach((m) => {
-          db.run(
-            `INSERT INTO materiales (nombre, precio_compra_por_kg, precio_venta_por_kg) VALUES (?, ?, ?)`,
-            [m.nombre, m.compra, m.venta]
-          );
-        });
+      for (const m of materialesDefecto) {
+        await db.runAsync(
+          `INSERT INTO materiales (nombre, precio_compra_por_kg, precio_venta_por_kg) VALUES (?, ?, ?)`,
+          [m.nombre, m.compra, m.venta]
+        );
       }
-    });
-  }
-});
+    }
 
-pool.query(`
-  CREATE TABLE IF NOT EXISTS transacciones (
-    id SERIAL PRIMARY KEY,
-    tipo VARCHAR(20) NOT NULL CHECK(tipo IN ('compra', 'venta')),
-    material_id INTEGER,
-    cantidad_kg REAL NOT NULL,
-    precio_unitario REAL NOT NULL,
-    total REAL NOT NULL,
-    detalle TEXT,
-    fecha VARCHAR(50) NOT NULL,
-    usuario_id INTEGER,
-    FOREIGN KEY(material_id) REFERENCES materiales(id),
-    FOREIGN KEY(usuario_id) REFERENCES usuarios(id)
-  )
-`, (err) => {
-  if (err) {
-    console.error('Error creando tabla transacciones:', err.message);
+    // 3. Crear tabla de transacciones (con llaves foráneas válidas ya creadas)
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS transacciones (
+        id SERIAL PRIMARY KEY,
+        tipo VARCHAR(20) NOT NULL CHECK(tipo IN ('compra', 'venta')),
+        material_id INTEGER,
+        cantidad_kg REAL NOT NULL,
+        precio_unitario REAL NOT NULL,
+        total REAL NOT NULL,
+        detalle TEXT,
+        fecha VARCHAR(50) NOT NULL,
+        usuario_id INTEGER,
+        FOREIGN KEY(material_id) REFERENCES materiales(id),
+        FOREIGN KEY(usuario_id) REFERENCES usuarios(id)
+      )
+    `);
+
+    console.log('Base de datos inicializada y tablas creadas exitosamente.');
+  } catch (err) {
+    console.error('Error durante la inicialización de la base de datos:', err.message);
   }
-});
+}
+
+// Iniciar la inicialización ordenada
+inicializarBaseDeDatos();
 
 export default db;
