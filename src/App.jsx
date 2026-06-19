@@ -183,6 +183,28 @@ function App() {
     }
   };
 
+  const eliminarTransaccion = async (id) => {
+    if (!window.confirm('¿Está seguro de eliminar esta transacción para corregir el error?')) {
+      return;
+    }
+    try {
+      const res = await fetch(`${API_BASE_URL}/api/transacciones/${id}`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+      const data = await res.json();
+      if (res.ok) {
+        cargarBalance();
+      } else {
+        alert(data.mensaje || 'Error al eliminar la transacción.');
+      }
+    } catch (err) {
+      alert('Error de red al intentar eliminar la transacción.');
+    }
+  };
+
   const abrirEditorPrecio = (material) => {
     setEditMaterial(material);
     setNuevoPrecioCompra(material.precio_compra_por_kg);
@@ -334,12 +356,32 @@ function App() {
                           Por {t.registrado_por} • {formatearFecha(t.fecha)}
                         </span>
                       </div>
-                      <div className="transaction-right">
+                      <div className="transaction-right" style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', justifyContent: 'center' }}>
                         <span className={`transaction-total ${t.tipo}`}>
                           {t.tipo === 'compra' ? '-' : '+'}{formatearMoneda(t.total)}
                         </span>
-                        <div className="transaction-qty">
-                          {t.cantidad_kg} kg @ {formatearMoneda(t.precio_unitario)}/kg
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                          <span className="transaction-qty">
+                            {t.cantidad_kg} kg @ {formatearMoneda(t.precio_unitario)}/kg
+                          </span>
+                          {usuario?.rol === 'gerente' && (
+                            <button 
+                              onClick={() => eliminarTransaccion(t.id)}
+                              style={{ 
+                                background: 'rgba(239, 68, 68, 0.1)', 
+                                border: 'none', 
+                                borderRadius: '4px',
+                                cursor: 'pointer', 
+                                padding: '2px 6px', 
+                                color: 'var(--danger)',
+                                fontSize: '0.8rem',
+                                transition: 'all 0.2s'
+                              }}
+                              title="Eliminar registro"
+                            >
+                              🗑️
+                            </button>
+                          )}
                         </div>
                       </div>
                     </div>

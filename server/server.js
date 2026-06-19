@@ -188,6 +188,21 @@ app.get('/api/balance', verificarToken, (req, res) => {
   });
 });
 
+// Eliminar una transacción (Solo Gerente)
+app.delete('/api/transacciones/:id', verificarToken, esGerente, (req, res) => {
+  const { id } = req.params;
+
+  db.run('DELETE FROM transacciones WHERE id = ?', [id], function (err) {
+    if (err) {
+      return res.status(500).json({ mensaje: 'Error al eliminar la transacción.' });
+    }
+    if (this.changes === 0) {
+      return res.status(404).json({ mensaje: 'Transacción no encontrada.' });
+    }
+    res.json({ mensaje: 'Transacción eliminada con éxito.' });
+  });
+});
+
 // Servir archivos estáticos del frontend
 app.use(express.static(path.join(__dirname, '../dist')));
 

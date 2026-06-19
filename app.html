@@ -1345,6 +1345,16 @@
       loadBalance();
     }
 
+    window.deleteTransaction = function(id) {
+      if (!confirm('¿Está seguro de eliminar esta transacción para corregir el error?')) {
+        return;
+      }
+      let txs = getTransactions();
+      txs = txs.filter(t => t.id !== id);
+      localStorage.setItem('chatarreria_transacciones', JSON.stringify(txs));
+      loadBalance();
+    };
+
     function loadBalance() {
       const txs = getTransactions();
       const filterMonth = document.getElementById('filter-month').value;
@@ -1419,25 +1429,39 @@
           item.className = 'transaction-item';
 
           if (t.tipo === 'gasto') {
+            const deleteBtnHtml = (currentUser && currentUser.rol === 'gerente') ? `
+              <button onclick="deleteTransaction(${t.id})" style="background: rgba(239, 68, 68, 0.1); border: none; border-radius: 4px; cursor: pointer; padding: 2px 6px; color: var(--danger); font-size: 0.8rem; margin-top: 4px; display: inline-block;" title="Eliminar registro">
+                🗑️
+              </button>
+            ` : '';
             item.innerHTML = `
               <div class="transaction-left">
                 <span class="transaction-name" style="color: var(--warning);">⚠️ ${t.categoria}</span>
                 <span class="transaction-meta">${t.detalle} • Por ${t.usuario} • ${formatDate(t.fecha)}</span>
               </div>
-              <div class="transaction-right">
+              <div class="transaction-right" style="display: flex; flex-direction: column; align-items: flex-end; justify-content: center;">
                 <span class="transaction-total gasto">-${formatCurrency(t.total)}</span>
+                ${deleteBtnHtml}
               </div>
             `;
           } else {
             const detalleStr = t.detalle ? `<strong>${t.detalle}</strong> • ` : '';
+            const deleteBtnHtml = (currentUser && currentUser.rol === 'gerente') ? `
+              <button onclick="deleteTransaction(${t.id})" style="background: rgba(239, 68, 68, 0.1); border: none; border-radius: 4px; cursor: pointer; padding: 2px 6px; color: var(--danger); font-size: 0.8rem;" title="Eliminar registro">
+                🗑️
+              </button>
+            ` : '';
             item.innerHTML = `
               <div class="transaction-left">
                 <span class="transaction-name">${t.materialNombre}</span>
                 <span class="transaction-meta">${detalleStr}Por ${t.usuario} • ${formatDate(t.fecha)}</span>
               </div>
-              <div class="transaction-right">
+              <div class="transaction-right" style="display: flex; flex-direction: column; align-items: flex-end; justify-content: center;">
                 <span class="transaction-total ${t.tipo}">${t.tipo === 'compra' ? '-' : '+'}${formatCurrency(t.total)}</span>
-                <div class="transaction-qty">${t.cantidad} kg @ ${formatCurrency(t.precioUnitario)}/kg</div>
+                <div style="display: flex; align-items: center; gap: 8px;">
+                  <span class="transaction-qty">${t.cantidad} kg @ ${formatCurrency(t.precioUnitario)}/kg</span>
+                  ${deleteBtnHtml}
+                </div>
               </div>
             `;
           }
