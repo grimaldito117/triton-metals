@@ -113,7 +113,7 @@ app.put('/api/materiales/:id', verificarToken, esGerente, (req, res) => {
 
 // Registrar una transacción (Compra o Venta)
 app.post('/api/transacciones', verificarToken, (req, res) => {
-  const { tipo, material_id, cantidad_kg, precio_unitario, detalle } = req.body;
+  const { tipo, material_id, cantidad_kg, precio_unitario, detalle, fecha } = req.body;
   const usuario_id = req.usuario.id;
 
   if (!tipo || !material_id || !cantidad_kg || !precio_unitario) {
@@ -121,12 +121,22 @@ app.post('/api/transacciones', verificarToken, (req, res) => {
   }
 
   const total = cantidad_kg * precio_unitario;
-  const fecha = new Date().toISOString();
+  let fechaTransaccion = new Date().toISOString();
+  if (fecha) {
+    try {
+      const parsedDate = new Date(fecha);
+      if (!isNaN(parsedDate.getTime())) {
+        fechaTransaccion = parsedDate.toISOString();
+      }
+    } catch (e) {
+      // Usar fecha actual en caso de error de parseo
+    }
+  }
 
   db.run(
     `INSERT INTO transacciones (tipo, material_id, cantidad_kg, precio_unitario, total, detalle, fecha, usuario_id) 
      VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
-    [tipo, material_id, cantidad_kg, precio_unitario, total, detalle, fecha, usuario_id],
+    [tipo, material_id, cantidad_kg, precio_unitario, total, detalle, fechaTransaccion, usuario_id],
     function (err) {
       if (err) {
         return res.status(500).json({ mensaje: 'Error al registrar transacción.' });

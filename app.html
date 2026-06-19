@@ -875,6 +875,11 @@
             </div>
           </div>
 
+          <div class="form-group">
+            <label>Fecha / Hora de Operación (Opcional - Dejar vacío para hoy)</label>
+            <input type="datetime-local" id="trans-date" class="input-control">
+          </div>
+
           <div class="card" style="background: rgba(0,0,0,0.2); border-style: dashed; margin-bottom: 20px;">
             <div style="display: flex; justify-content: space-between; font-weight: bold;">
               <span>Total Estimado:</span>
@@ -1668,6 +1673,14 @@
       errorEl.classList.add('hidden');
 
       const txs = getTransactions();
+      const customDateVal = document.getElementById('trans-date').value;
+      let fechaTransaccion = new Date().toISOString();
+      if (customDateVal) {
+        const parsedDate = new Date(customDateVal);
+        if (!isNaN(parsedDate.getTime())) {
+          fechaTransaccion = parsedDate.toISOString();
+        }
+      }
 
       if (currentTransType === 'gasto') {
         const category = document.getElementById('gasto-category').value;
@@ -1691,7 +1704,7 @@
           categoria: category,
           detalle: desc,
           total: amount,
-          fecha: new Date().toISOString(),
+          fecha: fechaTransaccion,
           usuario: currentUser.username
         };
 
@@ -1701,6 +1714,7 @@
         // Limpiar formulario de gasto
         document.getElementById('gasto-desc').value = '';
         document.getElementById('gasto-amount').value = '';
+        document.getElementById('trans-date').value = '';
         document.getElementById('trans-total').innerText = 'Bs. 0,00';
       } else {
         const matId = document.getElementById('trans-material').value;
@@ -1730,7 +1744,7 @@
           precioUnitario: price,
           total: qty * price,
           detalle: desc,
-          fecha: new Date().toISOString(),
+          fecha: fechaTransaccion,
           usuario: currentUser.username
         };
 
@@ -1742,6 +1756,7 @@
         document.getElementById('trans-material').value = '';
         document.getElementById('trans-price').value = '';
         document.getElementById('trans-desc').value = '';
+        document.getElementById('trans-date').value = '';
         document.getElementById('trans-total').innerText = 'Bs. 0,00';
       }
 

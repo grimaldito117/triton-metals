@@ -25,6 +25,7 @@ function App() {
   const [cantidad, setCantidad] = useState('');
   const [precioUnitario, setPrecioUnitario] = useState(0);
   const [descripcion, setDescripcion] = useState('');
+  const [fechaTransaccion, setFechaTransaccion] = useState('');
   const [totalCalculado, setTotalCalculado] = useState(0);
   const [transaccionExito, setTransaccionExito] = useState('');
   const [transaccionError, setTransaccionError] = useState('');
@@ -160,7 +161,8 @@ function App() {
           material_id: parseInt(materialSeleccionado),
           cantidad_kg: parseFloat(cantidad),
           precio_unitario: parseFloat(precioUnitario),
-          detalle: descripcion
+          detalle: descripcion,
+          fecha: fechaTransaccion
         })
       });
 
@@ -170,6 +172,7 @@ function App() {
         setCantidad('');
         setMaterialSeleccionado('');
         setDescripcion('');
+        setFechaTransaccion('');
         cargarBalance(); // Refrescar balances e historial
         setTimeout(() => setTransaccionExito(''), 3000);
       } else {
@@ -421,6 +424,16 @@ function App() {
                   placeholder="Ej: Chatarra de marcos de ventana o notas adicionales"
                   value={descripcion}
                   onChange={(e) => setDescripcion(e.target.value)}
+                />
+              </div>
+
+              <div className="form-group">
+                <label>Fecha / Hora de Operación (Opcional - Dejar vacío para hoy)</label>
+                <input
+                  type="datetime-local"
+                  className="input-control"
+                  value={fechaTransaccion}
+                  onChange={(e) => setFechaTransaccion(e.target.value)}
                 />
               </div>
 
