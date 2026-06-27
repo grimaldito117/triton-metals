@@ -447,13 +447,13 @@ function App() {
               </div>
 
               <div className="form-group">
-                <label>Precio por Kilogramo (Fijo de Catálogo)</label>
+                <label>Precio por Kilogramo (Bs.)</label>
                 <input
                   type="number"
                   step="0.01"
                   className="input-control"
                   value={precioUnitario}
-                  disabled={true}
+                  onChange={(e) => setPrecioUnitario(e.target.value)}
                   required
                 />
               </div>
