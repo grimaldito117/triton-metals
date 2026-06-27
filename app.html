@@ -791,9 +791,12 @@
           </div>
         </div>
 
-        <div>
-          <h3 style="margin-bottom: 12px; margin-top: 16px;">Historial de Operaciones</h3>
-          <div id="transaction-list" class="transaction-list">
+        <div style="margin-top: 16px; margin-bottom: 12px;">
+          <div style="display: flex; justify-content: space-between; align-items: center;">
+            <h3 style="margin: 0;">Historial de Operaciones</h3>
+            <button id="btn-reset-pwa" class="btn btn-danger hidden" onclick="reiniciarSistemaLocal()" style="padding: 6px 12px; font-size: 0.75rem; background: var(--danger); border: none; font-weight: bold; border-radius: 6px; cursor: pointer;">⚠️ Empezar de Cero</button>
+          </div>
+          <div id="transaction-list" class="transaction-list" style="margin-top: 12px;">
             <!-- Dinámico -->
           </div>
         </div>
@@ -1133,18 +1136,21 @@
         const opexChartBox = document.getElementById('opex-chart-box');
         const opexResumenBox = document.getElementById('op-expenses-box');
         const cierresBox = document.getElementById('cierre-caja-historial-box');
+        const btnResetPwa = document.getElementById('btn-reset-pwa');
 
         if (currentUser.rol === 'gerente') {
           toggleGasto.classList.remove('hidden');
           opexChartBox.classList.remove('hidden');
           opexResumenBox.classList.remove('hidden');
           cierresBox.classList.remove('hidden');
+          if (btnResetPwa) btnResetPwa.classList.remove('hidden');
           transSelector.style.gridTemplateColumns = '1fr 1fr 1fr';
         } else {
           toggleGasto.classList.add('hidden');
           opexChartBox.classList.add('hidden');
           opexResumenBox.classList.add('hidden');
           cierresBox.classList.add('hidden');
+          if (btnResetPwa) btnResetPwa.classList.add('hidden');
           transSelector.style.gridTemplateColumns = '1fr 1fr';
         }
 
@@ -1373,6 +1379,17 @@
       txs = txs.filter(t => t.id !== id);
       localStorage.setItem('chatarreria_transacciones', JSON.stringify(txs));
       loadBalance();
+    };
+
+    window.reiniciarSistemaLocal = function() {
+      if (!confirm('⚠️ ¿Está seguro de que desea eliminar permanentemente todas las transacciones de prueba, arqueos y reiniciar la caja chica para empezar de cero? Esta acción no se puede deshacer.')) {
+        return;
+      }
+      localStorage.removeItem('chatarreria_transacciones');
+      localStorage.setItem('chatarreria_caja', JSON.stringify({ abierta: false, saldoInicial: 0, fechaApertura: null }));
+      localStorage.removeItem('chatarreria_cierres');
+      alert('Sistema reiniciado con éxito. Todos los datos de prueba han sido eliminados.');
+      location.reload();
     };
 
     function loadBalance() {

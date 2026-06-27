@@ -203,6 +203,16 @@ app.delete('/api/transacciones/:id', verificarToken, esGerente, (req, res) => {
   });
 });
 
+// Reiniciar Base de Datos - Empezar de cero (Solo Gerente)
+app.post('/api/admin/reset', verificarToken, esGerente, (req, res) => {
+  db.run('DELETE FROM transacciones', [], function (err) {
+    if (err) {
+      return res.status(500).json({ mensaje: 'Error al reiniciar la base de datos.' });
+    }
+    res.json({ mensaje: 'Base de datos reiniciada con éxito (todas las transacciones eliminadas).' });
+  });
+});
+
 // Servir archivos estáticos del frontend
 app.use(express.static(path.join(__dirname, '../dist')));
 

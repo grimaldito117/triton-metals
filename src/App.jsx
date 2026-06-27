@@ -205,6 +205,29 @@ function App() {
     }
   };
 
+  const reiniciarSistema = async () => {
+    if (!window.confirm('⚠️ ¿Está seguro de que desea eliminar permanentemente todas las transacciones de la base de datos para empezar de cero? Esta acción no se puede deshacer.')) {
+      return;
+    }
+    try {
+      const res = await fetch(`${API_BASE_URL}/api/admin/reset`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+      const data = await res.json();
+      if (res.ok) {
+        alert(data.mensaje);
+        cargarBalance();
+      } else {
+        alert(data.mensaje || 'Error al reiniciar el sistema.');
+      }
+    } catch (err) {
+      alert('Error de red al intentar reiniciar el sistema.');
+    }
+  };
+
   const abrirEditorPrecio = (material) => {
     setEditMaterial(material);
     setNuevoPrecioCompra(material.precio_compra_por_kg);
@@ -339,8 +362,30 @@ function App() {
               </div>
             </div>
 
-            <div>
-              <h3 style={{ marginBottom: '12px' }}>Historial Reciente</h3>
+             <div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
+                <h3 style={{ margin: 0 }}>Historial Reciente</h3>
+                {usuario?.rol === 'gerente' && (
+                  <button
+                    onClick={reiniciarSistema}
+                    style={{
+                      background: 'var(--danger)',
+                      color: 'white',
+                      border: 'none',
+                      borderRadius: '6px',
+                      padding: '6px 12px',
+                      fontSize: '0.75rem',
+                      fontWeight: 'bold',
+                      cursor: 'pointer',
+                      transition: 'opacity 0.2s'
+                    }}
+                    onMouseOver={(e) => e.currentTarget.style.opacity = 0.9}
+                    onMouseOut={(e) => e.currentTarget.style.opacity = 1}
+                  >
+                    ⚠️ Empezar de Cero
+                  </button>
+                )}
+              </div>
               {balance.historial.length === 0 ? (
                 <div className="card" style={{ textAlign: 'center', color: 'var(--text-secondary)' }}>
                   No hay transacciones registradas aún.
